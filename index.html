@@ -3,775 +3,338 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeonFlow Chat // Realtime React + GSAP</title>
+    <title>Tutor Chatroom</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     
-    <!-- React & ReactDOM -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    
-    <!-- Babel for JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- GSAP -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    
-    <!-- Firebase SDKs (Compat version for simpler CDN usage) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
-    <!-- Icons -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-
     <style>
         :root {
-            --bg-color: #0f172a;
-            --accent-primary: #8b5cf6; /* Violet */
-            --accent-secondary: #06b6d4; /* Cyan */
-            --glass-bg: rgba(30, 41, 59, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            --primary: #4e54c8;
+            --accent: #00d2ff;
+            --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            --glass-bg: rgba(20, 20, 40, 0.7);
+            --my-msg-bg: linear-gradient(45deg, #4e54c8, #8f94fb);
+            --other-msg-bg: rgba(255, 255, 255, 0.1);
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
 
         body {
-            background-color: var(--bg-color);
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 20%),
-                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.15) 0%, transparent 20%);
-            color: var(--text-main);
             height: 100vh;
-            overflow: hidden;
+            width: 100vw;
+            background: var(--bg-gradient);
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            color: #fff;
         }
 
-        /* --- UI Components --- */
-        
-        .app-container {
-            width: 100%;
-            max-width: 480px; /* Mobile-first approach scaled up */
-            height: 100%;
-            max-height: 850px;
-            position: relative;
+        .chat-container {
+            width: 95%;
+            max-width: 500px;
+            height: 85vh;
             background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            border-radius: 0;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
 
-        @media (min-width: 500px) {
-            .app-container {
-                height: 90vh;
-                border-radius: 24px;
-            }
-        }
-
-        /* --- Login Screen --- */
-        .login-screen {
-            position: absolute;
-            inset: 0;
-            z-index: 20;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(15, 23, 42, 0.95);
-            padding: 2rem;
-            text-align: center;
-        }
-
-        .login-logo {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .input-group {
-            width: 100%;
-            margin-bottom: 1.5rem;
-            text-align: left;
-        }
-
-        .input-label {
-            display: block;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .text-input {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            border: 1px solid var(--glass-border);
-            background: rgba(255, 255, 255, 0.05);
-            color: white;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .text-input:focus {
-            border-color: var(--accent-primary);
-        }
-
-        .color-picker-grid {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .color-option {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: transform 0.2s;
-        }
-
-        .color-option.selected {
-            border-color: white;
-            transform: scale(1.2);
-        }
-
-        .btn-primary {
-            width: 100%;
-            padding: 14px;
-            border-radius: 12px;
-            border: none;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            color: white;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-
-        .btn-primary:hover {
-            opacity: 0.9;
-        }
-
-        /* --- Chat Interface --- */
+        /* HEADER */
         .chat-header {
-            padding: 1rem;
-            border-bottom: 1px solid var(--glass-border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(15, 23, 42, 0.6);
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex; justify-content: space-between; align-items: center;
         }
+        .chat-info h3 { font-size: 1.1rem; }
+        .live-dot { width: 8px; height: 8px; background: #00ff88; border-radius: 50%; display: inline-block; margin-right: 5px; }
 
-        .status-badge {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.8rem;
-            color: var(--accent-secondary);
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background: #22c55e;
-            border-radius: 50%;
-            box-shadow: 0 0 8px #22c55e;
-        }
-
-        .chat-area {
+        /* MESSAGES */
+        .chat-messages {
             flex: 1;
+            padding: 20px;
             overflow-y: auto;
-            padding: 1rem;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            scroll-behavior: smooth;
+            gap: 10px;
         }
-
-        /* Scrollbar styling */
-        .chat-area::-webkit-scrollbar {
-            width: 6px;
-        }
-        .chat-area::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .chat-area::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-        }
-
-        .message-bubble {
+        
+        .message {
             max-width: 80%;
-            padding: 10px 14px;
-            border-radius: 16px;
-            position: relative;
+            display: flex; flex-direction: column;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .message-content {
+            padding: 10px 15px;
+            border-radius: 15px;
             font-size: 0.95rem;
-            line-height: 1.4;
             word-wrap: break-word;
         }
 
-        .message-bubble.mine {
-            align-self: flex-end;
-            background: linear-gradient(135deg, var(--accent-primary), #7c3aed);
-            color: white;
-            border-bottom-right-radius: 4px;
-            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        .message.mine { align-self: flex-end; align-items: flex-end; }
+        .message.mine .message-content {
+            background: var(--my-msg-bg); color: #fff;
+            border-bottom-right-radius: 2px;
         }
 
-        .message-bubble.theirs {
-            align-self: flex-start;
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text-main);
-            border-bottom-left-radius: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+        .message.others { align-self: flex-start; align-items: flex-start; }
+        .message.others .message-content {
+            background: var(--other-msg-bg); color: #eee;
+            border-bottom-left-radius: 2px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .sender-name { font-size: 0.75rem; color: var(--accent); margin-bottom: 2px; font-weight: 600; }
+        .message-meta { font-size: 0.7rem; opacity: 0.6; margin-top: 2px; }
+        
+        /* ERROR MESSAGE STYLE */
+        .message.error .message-content { 
+            background: rgba(255, 50, 50, 0.2); 
+            color: #ff9999; 
+            border: 1px solid red; 
+            text-align: center;
         }
 
-        .message-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 4px;
-            font-size: 0.7rem;
-            opacity: 0.8;
-            gap: 8px;
+        /* INPUT AREA */
+        .chat-input-area {
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            display: flex; gap: 10px;
+            border-top: 1px solid rgba(255,255,255,0.05);
         }
-
-        .avatar-initial {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: white;
-            color: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 0.7rem;
-        }
-
-        .system-message {
-            align-self: center;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            background: rgba(255, 255, 255, 0.03);
-            padding: 4px 12px;
-            border-radius: 20px;
-            margin: 8px 0;
-        }
-
-        /* Input Area */
-        .input-area {
-            padding: 1rem;
-            background: rgba(15, 23, 42, 0.8);
-            border-top: 1px solid var(--glass-border);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .chat-input {
+        input[type="text"] {
             flex: 1;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid transparent;
-            padding: 12px;
-            border-radius: 24px;
-            color: white;
-            outline: none;
-            font-size: 0.95rem;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 12px; border-radius: 25px;
+            color: #fff; outline: none;
         }
-
-        .chat-input:focus {
-            border-color: var(--accent-secondary);
-            background: rgba(255, 255, 255, 0.08);
-        }
-
         .send-btn {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            border: none;
-            background: var(--accent-secondary);
-            color: #0f172a;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: transform 0.2s;
+            background: var(--accent); border: none;
+            width: 45px; height: 45px; border-radius: 50%;
+            color: #000; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: 0.2s;
+        }
+        .send-btn:hover { transform: scale(1.1); }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+            z-index: 1000; display: flex; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: #1a1a2e; padding: 30px; border-radius: 15px;
+            width: 90%; max-width: 350px; text-align: center;
+            border: 1px solid var(--accent);
+        }
+        .modal-content input {
+            width: 100%; padding: 12px; margin: 15px 0;
+            border-radius: 5px; border: none; text-align: center;
+        }
+        .modal-btn {
+            background: var(--accent); border: none; padding: 10px 20px;
+            border-radius: 5px; width: 100%; font-weight: bold; cursor: pointer;
         }
 
-        .send-btn:hover {
-            transform: scale(1.1);
+        @media (max-width: 480px) {
+            .chat-container { width: 100%; height: 100%; border-radius: 0; }
         }
-        
-        .send-btn:disabled {
-            background: var(--text-muted);
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .sound-toggle {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-size: 1.2rem;
-            padding: 8px;
-            transition: color 0.2s;
-        }
-
-        .sound-toggle.active {
-            color: var(--accent-primary);
-            text-shadow: 0 0 10px var(--accent-primary);
-        }
-
-        /* Typing Indicator */
-        .typing-indicator {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-left: 10px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            opacity: 0;
-        }
-        
-        .typing-dot {
-            width: 4px;
-            height: 4px;
-            background: var(--text-muted);
-            border-radius: 50%;
-            animation: bounce 1.4s infinite ease-in-out both;
-        }
-        
-        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
-        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
-        
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
-        }
-
-        /* Toast Notification */
-        .toast {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-100%);
-            background: rgba(220, 38, 38, 0.9); /* Red */
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            z-index: 50;
-            opacity: 0;
-            pointer-events: none;
-        }
-
     </style>
 </head>
 <body>
-    <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef, useLayoutEffect } = React;
+    <!-- JOIN MODAL -->
+    <div class="modal-overlay" id="joinModal">
+        <div class="modal-content">
+            <h2>Join Chat</h2>
+            <p>Enter your nickname</p>
+            <input type="text" id="usernameInput" placeholder="Ex: Alex" maxlength="12">
+            <button class="modal-btn" id="enterBtn">Enter Room</button>
+        </div>
+    </div>
 
-        // --- 1. Sound System (Web Audio API) ---
-        // Generates a soft "blip" with reverb without external files
-        const useAudio = () => {
-            const [enabled, setEnabled] = useState(true);
-            
-            const playEcho = () => {
-                if (!enabled) return;
-                
-                try {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    if (!AudioContext) return;
-                    
-                    const ctx = new AudioContext();
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    
-                    // Reverb-like effect using decay
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(800, ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.1);
-                    
-                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-                    
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    
-                    osc.start();
-                    osc.stop(ctx.currentTime + 0.3);
-                } catch (e) {
-                    console.error("Audio error", e);
-                }
-            };
+    <!-- CHAT UI -->
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="chat-info">
+                <h3><span class="live-dot"></span>English Chat</h3>
+            </div>
+            <div>
+                <button onclick="clearHistory()" style="background:none; border:none; color:#aaa; cursor:pointer;"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>
 
-            return { enabled, setEnabled, playEcho };
-        };
+        <div class="chat-messages" id="messageList">
+            <!-- Messages appear here -->
+        </div>
 
-        // --- 2. Firebase Config (Placeholder for Demo) ---
-        // Replace this config with your own Firebase project credentials
+        <div class="chat-input-area">
+            <input type="text" id="messageInput" placeholder="Type a message...">
+            <button class="send-btn" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <!-- FIREBASE SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getDatabase, ref, push, set, onChildAdded, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+        // ==========================================
+        // 🔥 YOUR SPECIFIC CONFIGURATION
+        // ==========================================
         const firebaseConfig = {
-            apiKey: "AIzaSyD-PLACEHOLDER-KEY",
-            authDomain: "chatroom-demo.firebaseapp.com",
-            projectId: "chatroom-demo",
-            storageBucket: "chatroom-demo.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abcdef"
-        };
+apiKey: "AIzaSyCpeuwfoG0FkmzxGDQkZYmhHnsFiOJYi1U",
+authDomain: "chatroom-a1482.firebaseapp.com",
+databaseURL: "https://chatroom-a1482-default-rtdb.asia-southeast1.firebasedatabase.app",
+projectId: "chatroom-a1482",
+storageBucket: "chatroom-a1482.firebasestorage.app",
+messagingSenderId: "251884293433",
+appId: "1:251884293433:web:0570fb56dd6548e24aace8",
+measurementId: "G-4S9ETM0QC8"
+};
 
-        // Initialize Firebase only if not already initialized
-        let db;
-        let isFirebaseActive = false;
-        
-        try {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
+        // --- GLOBAL VARIABLES ---
+        let app, db, messagesRef;
+        let username = localStorage.getItem('chat_username');
+        const messageList = document.getElementById('messageList');
+        const messageInput = document.getElementById('messageInput');
+        const joinModal = document.getElementById('joinModal');
+
+        // --- INITIALIZATION ---
+        function init() {
+            try {
+                // Initialize Firebase
+                app = initializeApp(firebaseConfig);
+                db = getDatabase(app);
+                messagesRef = ref(db, 'messages');
+                console.log("Firebase initialized successfully");
+
+                // Check if user already has a username
+                if (username) {
+                    joinModal.style.display = 'none';
+                    loadMessages();
+                } else {
+                    // Show modal
+                    joinModal.style.display = 'flex';
+                }
+
+            } catch (error) {
+                console.error("Firebase Init Error:", error);
+                showError("System Error: " + error.message);
             }
-            db = firebase.firestore();
-            isFirebaseActive = true;
-        } catch (e) {
-            console.warn("Firebase init failed (likely due to placeholder config). Running in demo mode.", e);
         }
 
-        // --- 3. Components ---
+        // --- FUNCTIONS ---
 
-        // Login Modal Component
-        const LoginModal = ({ onLogin }) => {
-            const [username, setUsername] = useState("");
-            const [selectedColor, setSelectedColor] = useState("#8b5cf6");
+        // 1. Join Chat (Button Click)
+        window.joinChat = () => {
+            const input = document.getElementById('usernameInput');
+            const name = input.value.trim();
             
-            const colors = ["#ef4444", "#f97316", "#f59e0b", "#22c55e", "#06b6d4", "#8b5cf6", "#d946ef"];
-
-            const handleSubmit = (e) => {
-                e.preventDefault();
-                if (username.trim().length < 2) {
-                    alert("Username must be at least 2 characters.");
-                    return;
-                }
-                onLogin(username.trim(), selectedColor);
-            };
-
-            return (
-                <div className="login-screen">
-                    <div className="login-logo">
-                        <i className="fa-brands fa-rocketchat"></i>
-                    </div>
-                    <h2>Join the Chat</h2>
-                    <p style={{color: 'var(--text-muted)', marginBottom: '2rem'}}>Enter a nickname to start</p>
-                    
-                    <form onSubmit={handleSubmit} style={{width: '100%'}}>
-                        <div className="input-group">
-                            <label className="input-label">Username</label>
-                            <input 
-                                type="text" 
-                                className="text-input" 
-                                placeholder="e.g. Neo"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                maxLength={15}
-                                autoFocus
-                            />
-                        </div>
-
-                        <div className="input-group">
-                            <label className="input-label">Avatar Color</label>
-                            <div className="color-picker-grid">
-                                {colors.map(c => (
-                                    <div 
-                                        key={c} 
-                                        className={`color-option ${selectedColor === c ? 'selected' : ''}`}
-                                        style={{backgroundColor: c}}
-                                        onClick={() => setSelectedColor(c)}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-
-                        <button type="submit" className="btn-primary">
-                            Enter Chatroom
-                        </button>
-                    </form>
-                </div>
-            );
+            if (name.length > 0) {
+                username = name;
+                localStorage.setItem('chat_username', username);
+                joinModal.style.display = 'none';
+                loadMessages();
+            } else {
+                alert("Please enter a name");
+            }
         };
 
-        // Message Component
-        const Message = ({ msg, isMine }) => {
-            const bubbleRef = useRef(null);
+        // 2. Load Messages (Real-time Listener)
+        function loadMessages() {
+            console.log("Loading messages...");
             
-            // GSAP Entry Animation
-            useLayoutEffect(() => {
-                gsap.fromTo(bubbleRef.current, 
-                    { opacity: 0, y: 20, scale: 0.95 },
-                    { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: "back.out(1.2)" }
-                );
-            }, []);
-
-            const time = new Date(msg.timestamp?.toDate?.() || Date.now()).toLocaleTimeString([], {
-                hour: '2-digit', minute: '2-digit'
+            onChildAdded(messagesRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    renderMessage(data.username, data.text, data.timestamp);
+                }
+            }, (error) => {
+                // CATCH PERMISSION ERRORS
+                console.error("Database Read Error:", error);
+                showError("Permission Denied. Update Database Rules to Public!");
             });
+        }
 
-            return (
-                <div 
-                    ref={bubbleRef}
-                    className={`message-bubble ${isMine ? 'mine' : 'theirs'}`}
-                >
-                    <div className="message-meta">
-                        {!isMine && (
-                            <div className="avatar-initial" style={{color: msg.avatarColor}}>
-                                {msg.user.charAt(0).toUpperCase()}
-                            </div>
-                        )}
-                        <span style={{fontWeight: 'bold'}}>{isMine ? 'You' : msg.user}</span>
-                        <span style={{marginLeft: 'auto'}}>{time}</span>
-                    </div>
-                    <div>{msg.text}</div>
-                </div>
-            );
+        // 3. Send Message
+        window.sendMessage = () => {
+            const text = messageInput.value.trim();
+            if (!text) return;
+
+            push(messagesRef, {
+                username: username,
+                text: text,
+                timestamp: serverTimestamp()
+            }).then(() => {
+                messageInput.value = '';
+            }).catch((error) => {
+                console.error("Send Error:", error);
+                showError("Failed to send: " + error.message);
+            });
         };
 
-        // Main Chat App Component
-        const ChatApp = () => {
-            const [user, setUser] = useState(null);
-            const [messages, setMessages] = useState([]);
-            const [input, setInput] = useState("");
-            const [typing, setTyping] = useState(false);
-            const [isTyping, setIsTyping] = useState(false); // Others typing
-            const [onlineCount, setOnlineCount] = useState(0);
-            const [error, setError] = useState("");
-            
-            const messagesEndRef = useRef(null);
-            const { enabled, setEnabled, playEcho } = useAudio();
-            const typingTimeoutRef = useRef(null);
+        // 4. Render Message to DOM
+        function renderMessage(user, text, time) {
+            const isMe = user === username;
+            const div = document.createElement('div');
+            div.className = `message ${isMe ? 'mine' : 'others'}`;
 
-            // Load user from localStorage
-            useEffect(() => {
-                const savedUser = localStorage.getItem("neonChatUser");
-                if (savedUser) {
-                    setUser(JSON.parse(savedUser));
-                }
-            }, []);
-
-            // Handle Login
-            const handleLogin = (name, color) => {
-                const userData = { id: Date.now().toString(), name, color };
-                localStorage.setItem("neonChatUser", JSON.stringify(userData));
-                setUser(userData);
-                
-                // Add system join message
-                addSystemMessage(`${name} joined the chat`);
-            };
-
-            const addSystemMessage = (text) => {
-                const sysMsg = {
-                    id: Math.random().toString(),
-                    text: text,
-                    type: 'system',
-                    timestamp: new Date()
-                };
-                setMessages(prev => [...prev, sysMsg]);
-            };
-
-            // Firebase Listener
-            useEffect(() => {
-                if (!user || !isFirebaseActive) return;
-
-                // Unsubscribe function
-                const unsubscribe = db.collection('chatrooms/global/messages')
-                    .orderBy('timestamp')
-                    .limitToLast(50)
-                    .onSnapshot(snapshot => {
-                        const fetchedMsgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        setMessages(fetchedMsgs);
-                    }, (err) => {
-                        console.error("Firebase error:", err);
-                        setError("Connection Error. Check console.");
-                    });
-
-                return () => unsubscribe();
-            }, [user]);
-
-            // Auto-scroll
-            useEffect(() => {
-                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-            }, [messages]);
-
-            // Send Message
-            const sendMessage = async (e) => {
-                e.preventDefault();
-                if (!input.trim()) return;
-
-                const newMsg = {
-                    user: user.name,
-                    text: input.trim(),
-                    avatarColor: user.color,
-                    timestamp: new Date(),
-                    type: 'text'
-                };
-
-                // Optimistic UI update
-                setInput("");
-                playEcho();
-
-                if (isFirebaseActive) {
-                    try {
-                        await db.collection('chatrooms/global/messages').add(newMsg);
-                    } catch (err) {
-                        setError("Failed to send message.");
-                    }
-                } else {
-                    // Demo mode fallback
-                    setMessages(prev => [...prev, { ...newMsg, id: Date.now().toString() }]);
-                }
-            };
-
-            // Handle Typing Logic (Simulation)
-            const handleTyping = (e) => {
-                setInput(e.target.value);
-                if (!typing) {
-                    setTyping(true);
-                    // Here you would push 'isTyping: true' to Firebase
-                }
-                
-                clearTimeout(typingTimeoutRef.current);
-                typingTimeoutRef.current = setTimeout(() => {
-                    setTyping(false);
-                }, 1000);
-            };
-
-            const handleLogout = () => {
-                localStorage.removeItem("neonChatUser");
-                setUser(null);
-                setMessages([]);
-            };
-
-            // Filter Profanity (Basic)
-            const badWords = ['bad', 'spam', 'hate']; // Example filter
-            const containsProfanity = (text) => badWords.some(word => text.toLowerCase().includes(word));
-
-            const validateAndSend = (e) => {
-                if (containsProfanity(input)) {
-                    setError("Please keep the chat clean!");
-                    // GSAP Shake Animation on Toast
-                    gsap.to(".toast", {x: [-10, 10, -10, 10, 0], duration: 0.4, opacity: 1});
-                    setTimeout(() => gsap.to(".toast", {opacity: 0}), 2000);
-                    return;
-                }
-                sendMessage(e);
-            };
-
-            // If no user, show login
-            if (!user) {
-                return (
-                    <div className="app-container">
-                        <LoginModal onLogin={handleLogin} />
-                    </div>
-                );
+            let timeStr = "";
+            if (time) {
+                timeStr = new Date(time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             }
 
-            return (
-                <div className="app-container">
-                    <div className="toast" ref={el => el && gsap.set(el, {opacity: 0})}>
-                        {error}
-                    </div>
+            div.innerHTML = `
+                ${!isMe ? `<div class="sender-name">${escapeHtml(user)}</div>` : ''}
+                <div class="message-content">${escapeHtml(text)}</div>
+                <div class="message-meta">${timeStr}</div>
+            `;
 
-                    {/* Header */}
-                    <header className="chat-header">
-                        <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-                            <div className="avatar-initial" style={{color: user.color, background: 'white', width: 30, height: 30}}>
-                                {user.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                                <h3 style={{fontSize: '1rem', fontWeight: 600}}>Global Chat</h3>
-                                <div className="status-badge">
-                                    <div className="status-dot"></div>
-                                    <span>{onlineCount || '1'} Online</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div style={{display: 'flex', gap: '10px'}}>
-                            <button 
-                                className={`sound-toggle ${enabled ? 'active' : ''}`} 
-                                onClick={() => setEnabled(!enabled)}
-                            >
-                                <i className={`fa-solid ${enabled ? 'fa-volume-high' : 'fa-volume-xmark'}`}></i>
-                            </button>
-                            <button className="sound-toggle" onClick={handleLogout} title="Logout">
-                                <i className="fa-solid fa-right-from-bracket"></i>
-                            </button>
-                        </div>
-                    </header>
+            messageList.appendChild(div);
+            messageList.scrollTop = messageList.scrollHeight;
+        }
 
-                    {/* Messages Area */}
-                    <main className="chat-area">
-                        {messages.map((msg, idx) => {
-                            if (msg.type === 'system') {
-                                return (
-                                    <div key={msg.id} className="system-message">
-                                        {msg.text}
-                                    </div>
-                                );
-                            }
-                            const isMine = msg.user === user.name;
-                            return <Message key={msg.id || idx} msg={msg} isMine={isMine} />;
-                        })}
-                        <div ref={messagesEndRef} />
-                    </main>
+        // 5. Helper: Show Error in Chat
+        function showError(msg) {
+            const div = document.createElement('div');
+            div.className = 'message error';
+            div.innerHTML = `<div class="message-content">⚠️ ${msg}</div>`;
+            messageList.appendChild(div);
+            messageList.scrollTop = messageList.scrollHeight;
+        }
 
-                    {/* Typing Indicator */}
-                    {isTyping && (
-                        <div className="typing-indicator" style={{opacity: 1, marginBottom: '5px', marginLeft: '1rem'}}>
-                            Someone is typing
-                            <div className="typing-dot"></div>
-                            <div className="typing-dot"></div>
-                            <div className="typing-dot"></div>
-                        </div>
-                    )}
+        // 6. Helper: XSS Protection
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
 
-                    {/* Input Area */}
-                    <footer className="input-area">
-                        <form onSubmit={validateAndSend} style={{display: 'flex', width: '100%', alignItems: 'center'}}>
-                            <input 
-                                type="text" 
-                                className="chat-input" 
-                                placeholder="Type a message..." 
-                                value={input}
-                                onChange={handleTyping}
-                                maxLength={300}
-                            />
-                            <button type="submit" className="send-btn" disabled={!input.trim()}>
-                                <i className="fa-solid fa-paper-plane"></i>
-                            </button>
-                        </form>
-                    </footer>
-                </div>
-            );
+        window.clearHistory = () => {
+            messageList.innerHTML = '';
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<ChatApp />);
+        // --- EVENT LISTENERS ---
+        window.addEventListener('DOMContentLoaded', () => {
+            init();
+        });
+
+        document.getElementById('enterBtn').addEventListener('click', window.joinChat);
+        document.getElementById('sendBtn').addEventListener('click', window.sendMessage);
+        
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') window.sendMessage();
+        });
+
     </script>
 </body>
 </html>
